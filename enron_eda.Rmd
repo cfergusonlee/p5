@@ -1,0 +1,238 @@
+---
+title: "Enron EDA"
+author: "Courtney Ferguson Lee"
+date: "6/19/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = T,
+                      message = F,
+                      warning = F)
+```
+
+# Introduction
+
+Here I will explore the Enron dataset using EDA, before diving into machine
+learning in Python.  I want to get a sense of the underlying datastructure.
+
+```{r Load_Packages}
+library(tidyverse)
+library(ggplot2)
+library(scales) # need to get labels = comma
+```
+
+```{r Load_Data}
+getwd()
+setwd('/Users/courtneyfergusonlee/p5')
+enron <- read.csv('enron_data.csv', 
+                  na.strings = 'NaN',
+                  stringsAsFactors = F)
+```
+
+
+# Univariate Plots
+
+## Basic Structure
+
+Let's explore some of the underlying structure and variables in the enron
+dataset.
+
+```{r}
+str(enron)
+```
+
+Looks like it is reading the poi (boolean) variable as a string.  Let's reencode
+that.
+
+```{r}
+enron$poi <- as.factor(enron$poi)
+```
+
+Much better!  Everything else looks in order.
+
+```{r}
+dim(enron)
+```
+
+```{r}
+summary(enron)
+```
+
+There are a few values in the summary that are probably worth looking into.  All
+variables seem to be widely distributed.  Salary alone has a minimum of 477 and
+a maximum of 26,704,229.  That's quite a range.  The same is true for most
+variables.  I'll probably have to remove some of these outliers or come up with
+some sort of scale to improve the accuracy of my model.  I'll start with a
+boxplot for each variable.
+
+```{r}
+str(subset(enron, salary > 1000000))
+```
+
+## Financial Features
+
+```{r}
+ggplot(data = enron,
+       aes(x = salary)) +
+  geom_histogram(binwidth = 25000) +
+  scale_x_continuous(labels = comma)
+```
+
+Whoa, that graph is tough to read with that outlier all the way at 26,000,000.
+Let's try limiting to just salaries under 1,000,000.
+
+```{r}
+ggplot(data = subset(enron,
+                     salary < 1000000),
+       aes(x = salary / 1000)) +
+  geom_histogram(binwidth = 25) +
+  scale_x_continuous(breaks = seq(0, 900, 50),
+                     labels = comma) +
+  ggtitle("Distribution of Salaries") +
+  xlab("Salary \n (In 1000's of dollars)") +
+  ylab("Frequency")
+```
+
+Much better! It looks like the distribution is approximately normally
+distributed with a center around $250,000.
+
+```{r}
+table(enron$restricted_stock_deferred)
+```
+
+```{r}
+ggplot(data = enron,
+       aes(x = other)) +
+  geom_histogram(bins = 60) +
+  scale_x_log10(labels = comma,
+                breaks = 10^seq(1, 7, 1)) +
+  ggtitle('Distribution of "Other" Variable') +
+  xlab('Other') +
+  ylab('Frequency')
+```
+
+The distribution for the "other" variable looks to be bimodal. There is a center
+around 400,000 and another around 1000.  It's not clear what this variable
+represents.
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+## Email Features
+
+
+```{r}
+
+```
+
+
+# Bivariate Plots
+
+## Financial Data
+
+```{r Financial_long_form}
+financial_long <- enron %>%
+  mutate(deferred_income = -deferred_income,
+         restricted_stock_deferred = -restricted_stock_deferred) %>%
+  select(expenses,
+         other,
+         director_fees,
+         restricted_stock_deferred,
+         deferred_income,
+         deferral_payments,
+         salary,
+         long_term_incentive,
+         restricted_stock,
+         bonus,
+         total_payments,
+         total_stock_value,
+         exercised_stock_options,
+         loan_advances) %>%
+  gather(financial_var,
+         amount) %>%
+  mutate(financial_var = as.factor(financial_var))
+
+str(financial_long)
+```
+
+For the next graph, I'm going to try to get a boxplot with all of the financial 
+data.  I'll have to transform it to long format first.
+
+```{r Financial_Boxplot}
+ggplot(data = subset(financial_long, 
+                     !is.na(amount) & amount > 0),
+       aes(x = reorder(financial_var, 
+                       amount, 
+                       median),
+           y = amount)) +
+  geom_boxplot() +
+  geom_jitter(aes(alpha = .2),
+              color = I('steelblue2'),
+              width = .2,
+              size = .5) +
+  scale_y_log10(labels = comma,
+                breaks = 10^seq(2, 8, 1)) +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  ggtitle("Distribution of Financial Variables") +
+  xlab("Financial Variable") +
+  ylab("Amount") +
+  guides(alpha = 'none')
+
+```
+
+## Email Data
+
+```{r}
+email_long <- enron %>%
+  select(to_messages,
+         shared_receipt_with_poi,
+         from_messages,
+         from_this_person_to_poi,
+         from_poi_to_this_person) %>%
+  gather(email_feature,
+         amount) %>%
+  mutate(email_feature = as.factor(email_feature))
+
+str(email_long)
+```
+
+The first thing we'll need to do is create a long form of the email variables.
+
+```{r}
+ggplot(data = subset(email_long, !is.na(amount)),
+       aes(x = reorder(email_feature, amount, median),
+           y = amount + 1)) +
+  geom_boxplot() +
+  geom_jitter(aes(alpha = .2),
+              color = I('red'),
+              width = .2,
+              size = .5) +
+  scale_y_log10(labels = comma,
+                breaks = c(0,
+                           10,
+                           100,
+                           1000,
+                           10000)) +
+  ggtitle('Distribution of Emails') +
+  xlab('Email Feature') +
+  ylab('Number of Messages') +
+  guides(alpha = 'none')
+```
+
+
+# Multivariate Plots
