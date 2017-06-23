@@ -35,9 +35,12 @@ enron <- read.csv('enron_data.csv',
 enron.new_features <- enron %>%
   mutate(fract_to_poi = from_this_person_to_poi/from_messages,
          fract_from_poi = from_poi_to_this_person/to_messages,
-         bonus_over_salary = bonus/salary,
+         salary_over_bonus = salary/bonus,
          exer_stock_opts_over_tot = exercised_stock_options/total_stock_value,
-         poi = as.factor(poi))
+         poi = as.factor(poi),
+         shared_plus_to_poi_messages = shared_receipt_with_poi + from_this_person_to_poi,
+         fract_shared_to_poi = shared_receipt_with_poi/to_messages)
+
 ```
 
 # Univariate Plots
@@ -75,9 +78,29 @@ variables.  I'll probably have to remove some of these outliers or come up with
 some sort of scale to improve the accuracy of my model.  I'll start with a
 boxplot for each variable.
 
+## Missing Values
+
+Below is one way of identifying missing values in the dataset.  It creates a 
+long form of the dataframe and then generates a heatmap showing where the
+missing values are located.
+
 ```{r}
-str(subset(enron, salary > 1000000))
+enron.missing <- as.data.frame(sapply(enron.new_features, is.na))
+
+enron.long <- enron.new_features %>%
+  gather(var_name,
+         value,
+         -name,
+         na.rm = F)
+
+ggplot(data = enron.long,
+       aes(x = name,
+           y = var_name)) +
+  geom_tile(aes(fill = !is.na(value))) +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
 ```
+
 
 ## Financial Features
 
@@ -285,9 +308,59 @@ ggplot(data = subset(financial_long,
 ```
 
 The director_fees and restricted_stock_deferred variables offer a lot of
-insight. If either of those variables are non_zero, it indicates fraud.  I 
-why this would be true.  I'll have to eventually research the variables in this
-dataset.
+insight. If either of those variables are non_zero, it indicates they are not a
+POI.  I wonder why this would be true.  I'll have to eventually research the 
+variables in this dataset.
+
+```{r}
+ggplot(data = enron.new_features,
+       aes(x = total_stock_value,
+           y = exercised_stock_options)) +
+  geom_point(aes(color = poi))
+
+ggplot(data = subset(enron.new_features, total_stock_value < 10000000),
+       aes(x = total_stock_value,
+           y = exercised_stock_options)) +
+  geom_point(aes(color = poi))
+
+subset(enron.new_features, exer_stock_opts_over_tot > .9)
+names(enron)
+```
+
+
+## Colored Financial Histograms
+
+```{r}
+ggplot(data = enron.new_features,
+       aes(x = salary_over_bonus)) +
+  geom_histogram(aes(fill = poi),
+                 bins = 40) +
+  ggtitle('Distibution of Salary to Bonus Ratio') +
+  xlab('Salary to Bonus Ratio') +
+  ylab('Frequency')
+```
+
+
+```{r}
+ggplot(data = enron.new_features,
+       aes(x = exer_stock_opts_over_tot)) +
+  geom_histogram(aes(fill = poi),
+                 bins = 50) +
+  ggtitle('Distibution of Exercised Stock Options to Total Stock Options Ratio')+
+  xlab('Exercised Stock Options to Total Stock Options Ratio') +
+  ylab('Frequency')
+```
+
+```{r}
+ggplot(data = enron.new_features,
+       aes(x = loan_advances)) +
+  geom_histogram(aes(fill = poi)) +
+  scale_x_log10()
+
+names(enron.new_features)
+enron.new_features$loan_advances
+```
+
 
 ## Email Data
 
@@ -316,8 +389,7 @@ ggplot(data = subset(email_long, !is.na(amount)),
   geom_boxplot() +
   geom_jitter(aes(alpha = .2,
                   color = poi),
-              width = .2,
-              size = .8) +
+              width = .2) +
   scale_y_log10(labels = comma,
                 breaks = c(0,
                            10,
@@ -338,8 +410,8 @@ ggplot(data = enron,
   geom_histogram(bins = 50,
                  aes(fill = poi)) +
   scale_x_log10() +
-  ggtitle("Distribution of Emails from this Person to a POI") +
-  xlab("Number of Emails from this Person to a POI") +
+  ggtitle("Distribution of Emails CC'd to POI") +
+  xlab("Emails CC'd to POI") +
   ylab("Frequency")
 ```
 
@@ -361,8 +433,8 @@ ggplot(data = enron,
        aes(x = from_poi_to_this_person)) +
   geom_histogram(binwidth = 10,
                  aes(fill = poi)) +
-  ggtitle("Distribution of Emails from this Person to a POI") +
-  xlab("Number of Emails from this Person to a POI") +
+  ggtitle("Distribution of Emails Received from a POI") +
+  xlab("Number of Emails Received from a POI") +
   ylab("Frequency")
 ```
 
@@ -372,19 +444,8 @@ ggplot(data = enron,
   geom_histogram(bins = 40,
                  aes(fill = poi)) +
   scale_x_log10(breaks = 10^seq(1, 4, 1)) +
-  ggtitle("Distribution of Emails from this Person to a POI") +
-  xlab("Number of Emails from this Person to a POI") +
-  ylab("Frequency")
-```
-
-```{r}
-ggplot(data = enron,
-       aes(x = shared_receipt_with_poi + 1)) +
-  geom_histogram(bins = 40,
-                 aes(fill = poi)) +
-  scale_x_log10() +
-  ggtitle("Distribution of Emails from this Person to a POI") +
-  xlab("Number of Emails from this Person to a POI") +
+  ggtitle("Distribution of Received Messages") +
+  xlab("Number of Received Messages") +
   ylab("Frequency")
 ```
 
@@ -405,6 +466,7 @@ ggplot(data = enron.new_features,
        aes(x = fract_to_poi)) +
   geom_histogram(bins = 30,
                  aes(fill = poi)) +
+  scale_x_continuous(breaks = seq(0, 1, .05)) +
   ggtitle("Distribution of Fractions of Emails to a POI") +
   xlab("Number of Emails from this Person to a POI") +
   ylab("Frequency")
@@ -421,17 +483,28 @@ ggplot(data = enron.new_features,
   ylab("Frequency")
 ```
 
+
+```{r}
+ggplot(data = enron.new_features,
+       aes(x = fract_shared_to_poi)) +
+  geom_histogram(aes(fill = poi))
+```
+
+
+
 # Multivariate Plots
 
 ```{r}
-ggpairs(subset(enron.new_features, select = -email_address))
+ggpairs(subset(enron.new_features, select = c(-email_address,
+                                             -poi,
+                                             -name)))
 ```
 
 
 ## Financial Plots
 
 ```{r}
-ggplot(data = subset(enron.new_features, salary < 10000000),
+ggplot(data = enron,
        aes(x = salary,
            y = bonus,
            color = poi)) +
@@ -441,12 +514,10 @@ ggplot(data = subset(enron.new_features, salary < 10000000),
 
 ```{r}
 ggplot(data = enron.new_features,
-       aes(x = bonus_over_salary,
+       aes(x = salary_over_bonus,
            y = exer_stock_opts_over_tot,
            color = poi)) +
   geom_point()
-
-names(enron.new_features)
 ```
 
 
@@ -457,6 +528,10 @@ ggplot(data = enron.new_features,
        aes(x = fract_to_poi,
            y = fract_from_poi,
            color = poi)) +
-  geom_point()
+  geom_point() +
+  ggtitle('Fraction of Emails From POI vs Fraction of Emails to POI') +
+  xlab('Fraction Sent to POI') +
+  ylab('Fraction From POI')
 ```
+
 
