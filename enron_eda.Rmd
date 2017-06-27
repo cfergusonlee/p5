@@ -39,7 +39,9 @@ enron.new_features <- enron %>%
          exer_stock_opts_over_tot = exercised_stock_options/total_stock_value,
          poi = as.factor(poi),
          shared_plus_to_poi_messages = shared_receipt_with_poi + from_this_person_to_poi,
-         fract_shared_to_poi = shared_receipt_with_poi/to_messages)
+         fract_shared_to_poi = shared_receipt_with_poi/to_messages,
+         expenses_over_salary = expenses / salary,
+         fract_deferred_payments = deferral_payments/total_payments)
 
 ```
 
@@ -97,8 +99,16 @@ ggplot(data = enron.long,
        aes(x = name,
            y = var_name)) +
   geom_tile(aes(fill = !is.na(value))) +
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank())
+  scale_color_manual(values = c('red', 'blue'),
+                     breaks = c('FALSE', 'TRUE'),
+                     labels = c('Missing', 'Present')) +
+  theme(legend.title = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  ggtitle("Heatmap of Missing Values") +
+  xlab("Observations") +
+  ylab("Variable Name") +
+  labs(fill = "Missingness")
 ```
 
 
@@ -183,7 +193,7 @@ I'll take a quick look at the distributions of emails.
 ggplot(data = enron,
        aes(x = from_this_person_to_poi + 1)) +
   geom_histogram(bins = 40) +
-  scale_x_log10(limits = c(1, 1000),
+  scale_x_log10(limits = c(1, 10000),
                 breaks = 10^seq(1, 4, 1)) +
   ggtitle("Distribution of Emails from this Person to a POI") +
   xlab("Number of Emails from this Person to a POI") +
@@ -343,6 +353,17 @@ ggplot(data = enron.new_features,
 
 ```{r}
 ggplot(data = enron.new_features,
+       aes(x = restricted_stock_deferred / restricted_stock)) +
+  geom_histogram(aes(fill = poi),
+                 bins = 40) +
+  ggtitle('Distibution of Salary to Bonus Ratio') +
+  xlab('Salary to Bonus Ratio') +
+  ylab('Frequency')
+```
+
+
+```{r}
+ggplot(data = enron.new_features,
        aes(x = exer_stock_opts_over_tot)) +
   geom_histogram(aes(fill = poi),
                  bins = 50) +
@@ -359,6 +380,55 @@ ggplot(data = enron.new_features,
 
 names(enron.new_features)
 enron.new_features$loan_advances
+```
+
+```{r}
+ggplot(data = enron.new_features,
+       aes(x = expenses)) +
+  geom_histogram(aes(fill = poi))
+```
+
+```{r}
+ggplot(data = subset(enron.new_features, expenses_over_salary < 40),
+       aes(x = expenses_over_salary)) +
+  geom_histogram(aes(fill = poi))
+```
+
+```{r}
+ggplot(data = enron.new_features,
+       aes(x = fract_deferred_payments)) +
+  geom_histogram(aes(fill = poi))
+```
+
+```{r}
+ggplot(data = subset(enron.new_features, 
+                     long_term_incentive / deferred_income > -800),
+       aes(x = long_term_incentive / deferred_income)) +
+  geom_histogram(aes(fill = poi))
+```
+
+```{r}
+ggplot(data = enron.new_features,
+       aes(x = restricted_stock / total_stock_value)) +
+  geom_histogram(aes(fill = poi))
+```
+
+```{r}
+ggplot(data = enron.new_features,
+       aes(x = long_term_incentive / total_stock_value)) +
+  geom_histogram(aes(fill = poi))
+```
+
+```{r}
+ggplot(data = enron.new_features,
+       aes(x = (bonus + restricted_stock) / salary)) +
+  geom_histogram(aes(fill = poi))
+```
+
+```{r}
+ggplot(data = enron.new_features,
+       aes(x = bonus)) +
+  geom_histogram(aes(fill = poi))
 ```
 
 
@@ -404,9 +474,16 @@ ggplot(data = subset(email_long, !is.na(amount)),
 
 ## Colored Email Distributions for POI vs Non-POI
 
+```{r Total_Poi_Interaction}
+ggplot(data = enron.new_features,
+       aes(x = (from_this_person_to_poi + from_poi_to_this_person + shared_receipt_with_poi)/(to_messages + from_messages))) +
+  geom_histogram(aes(fill = poi))
+```
+
+
 ```{r}
-ggplot(data = enron,
-       aes(x = shared_receipt_with_poi + 1)) +
+ggplot(data = enron.new_features,
+       aes(x = (from_poi_to_this_person)/to_messages)) +
   geom_histogram(bins = 50,
                  aes(fill = poi)) +
   scale_x_log10() +
@@ -415,6 +492,39 @@ ggplot(data = enron,
   ylab("Frequency")
 ```
 
+```{r}
+ggplot(data = enron.new_features,
+       aes(x = (from_this_person_to_poi)/from_messages)) +
+  geom_histogram(bins = 50,
+                 aes(fill = poi)) +
+  scale_x_log10() +
+  ggtitle("Distribution of Emails CC'd to POI") +
+  xlab("Emails CC'd to POI") +
+  ylab("Frequency")
+```
+
+```{r}
+ggplot(data = enron.new_features,
+       aes(x = (shared_receipt_with_poi)/to_messages)) +
+  geom_histogram(bins = 50,
+                 aes(fill = poi)) +
+  scale_x_log10() +
+  ggtitle("Distribution of Emails CC'd to POI") +
+  xlab("Emails CC'd to POI") +
+  ylab("Frequency")
+```
+
+
+```{r}
+ggplot(data = enron,
+       aes(x = (shared_receipt_with_poi))) +
+  geom_histogram(bins = 50,
+                 aes(fill = poi)) +
+  scale_x_log10() +
+  ggtitle("Distribution of Emails CC'd to POI") +
+  xlab("Emails CC'd to POI") +
+  ylab("Frequency")
+```
 
 ```{r}
 ggplot(data = enron,
@@ -534,4 +644,14 @@ ggplot(data = enron.new_features,
   ylab('Fraction From POI')
 ```
 
+```{r}
+ggplot(data = enron.new_features,
+       aes(x = (shared_receipt_with_poi)/to_messages,
+           y = fract_from_poi,
+           color = poi)) +
+  geom_point() +
+  ggtitle('Fraction of Emails From POI vs Fraction of Emails to POI') +
+  xlab('Fraction Sent to POI') +
+  ylab('Fraction From POI')
+```
 
