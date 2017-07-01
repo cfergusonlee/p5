@@ -1,0 +1,16 @@
+(lp0
+S'poi'
+p1
+aS'fract_from_poi'
+p2
+aS'fract_to_poi'
+p3
+aS'director_fees'
+p4
+aS'restricted_stock_deferred'
+p5
+aS'exercised_stock_options'
+p6
+aS'expenses'
+p7
+a.

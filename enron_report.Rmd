@@ -2,7 +2,7 @@
 title: "Enron Report"
 author: "By: Courtney Ferguson Lee"
 date: "June 29, 2017"
-output: pdf_document
+output: html_document
 ---
 
 <style type="text/css">
@@ -107,12 +107,23 @@ selection function like SelectKBest, please report the feature scores and
 reasons for your choice of parameter values.  [relevant rubric items: “create 
 new features”, “intelligently select features”, “properly scale features”]
 
-I used the following features in my model: 'poi', 'fract_from_poi', 
-'fract_to_poi', 'from_messages', 'director_fees', 'restricted_stock_deferred', 
-'exercised_stock_options' and 'expenses'.  I used Exploratory Data Analysis to 
-identify features that would help create clear boundaries for my classifier. The
-plots below helped me understand the underlying nature of the financial and
-email variables:
+Variable | Definition
+-------------- | ------------------------------------------------
+fract_from_poi | Fraction of total emails received from a poi
+fract_to_poi | Fraction of total emails sent to a poi
+director_fees | Compensation for attendance at board meetings
+restricted_stock_deferred | Stock that was not fully transferrable until certain contitions were met
+exercised_stock_options | Amount of Enron stock an employee bought or sold
+expenses |  Costs occurred by an employee while conducting business
+
+I used Exploratory Data Analysis to identify / engineer the above features to 
+help create clear boundaries for my classifier. I created two of the features: 
+the fraction of emails sent to POIs and the fraction of emails from POIs.  I 
+did this because it did not make sense to use the raw number of emails to or 
+from a POI.  The total number of sent and received emails ranged from around 10 
+to over 10,000.  To better compare human interactions, it made more sense to 
+code this data as a proportion. The plots below helped me understand the 
+underlying nature of the financial and email variables:
 
 ```{r Financial_long_form}
 financial_long <- enron %>%
@@ -213,8 +224,8 @@ ggplot(data = enron.new_features,
 
 After identifying useful features, I scaled them before using PCA in my model. I
 scaled the features because the ranges of the variables were too large and would
-throw off my model.  For instance, the range for fractional email variables 
-ranged from 0.0 to 1.0 while the exercised stock options varied from 1,000 to 
+throw off predictions.  For instance, the range for fractional email variables 
+ranged from 0.0 to 1.0 while exercised stock options varied from 1,000 to 
 around 30,000,000.  With such a large range, PCA would not be able to properly
 determine which variable accounted for most of the variance in the data. I 
 created my own MinMaxScaler and applied it right after creating new features.
@@ -225,18 +236,12 @@ explained variance ratios from PCA and and features importances from
 DecisionTree were: 
 
 **Explained Variance Ratios:**
-[ 0.3306276,   0.21620042,  0.1924513,   0.10458867,  0.08131957,  0.07125716,
-  0.00355528]
+[ 0.3574516,   0.23236625,  0.20634216,  0.11222562,  0.08776709]
+
   
 **Feature Importances:**
-[ 0.06752799,  0.,          0.14244186,  0.55146011,  0.20164066,  0.03692937,
-  0.        ]
+[ 0.,          0.,          0.15539112,  0.57452213,  0.27008675]
 
-I created two new features: the fraction of emails sent to POIs and the fraction
-of emails from POIs.  I engineered these features because it did not make sense
-to use the raw number of emails to or from a POI.  The total number of sent and
-received emails ranged from around 10 to over 10,000.  To better compare human
-interactions, it made more sense to code this data as a proportion.
 
 > 3. What algorithm did you end up using? What other one(s) did you try? How did 
 model performance differ between algorithms?  [relevant rubric item: “pick an algorithm”]
