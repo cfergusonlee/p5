@@ -49,27 +49,54 @@ any outliers in the data when you got it, and how did you handle those?
 [relevant rubric items: “data exploration”, “outlier investigation”]
 
 The goal for this project was to identify persons of interest (POIs) from a 
-dataset of enron employees.  The dataset contained both financial records and 
-email records, as well as their POI status label.  The financial information 
-included salary, bonuses, stock options, expenses and payments. The email data
-included the total number of outgoing and incoming messages as well as the 
-proportion of email interactions with known POIs.  I used a supervised machine learning algorithm to identify patterns in the email and financial data that 
-separated POIs from non-POIs.
+dataset of enron employees.  The dataset initially contained 146 observations 
+across 21 features and a POI status label.  There were 18 POI's and 128 
+non-POI's.  I used a supervised machine learning algorithm to identify patterns 
+in the email and financial data that separated POIs from non-POIs. The financial
+and email variables included:
 
-Two outliers in the dataset needed to be removed: “TOTAL” and “THE TRAVEL 
-AGENCY IN THE PARK”.  Neither of these were actual people, so they did not 
-contribute to the model.  There were several financial and email outliers, but I
-ultimately included them because they contained useful information.  Because of 
-the nature of the dataset, it was difficult to remove any outliers that varied 
-significantly from the rest of the population.  For example, Ken Lay and Joseph 
-Hirko had the largest exercised stock options, but they were both persons of 
-interest.  In addition, the dataset only consisted of less than 150 people and
-there was a lot of missing data, as shown in the following chart.  With such a 
-small number of observations, excluding any outliers would have had a 
-significant impact on the model.
-
+Financial Variables | Email Variables
+---|---
+bonus | email_address
+deferral_payments | from_messages
+deferred_income | from_poi_to_this_person
+director_fees | from_this_person_to_poi
+exer_stock_opts_over_tot | shared_receipt_with_poi
+exercised_stock_options | to_messages
+expenses | 
+loan_advances | 
+long_term_incentive | 
+other | 
+restricted_stock | 
+restricted_stock_deferred | 
+salary | 
+salary_over_bonus | 
+total_payments | 
+total_stock_value | 
 
 ```{r}
+subset(enron, is.na(total_payments)
+       & is.na(total_stock_value)
+       & is.na(email_address))
+```
+
+  
+
+Three outliers in the dataset needed to be removed: “TOTAL”, “THE TRAVEL AGENCY 
+IN THE PARK”, and "LOCKHART EUGENE E".  The first two weren't actual people, 
+so they did not contribute to the model.  Eugene Lockhart was missing data for
+all of his features, so he was removed as well.  There were several financial 
+and email outliers, but I ultimately included them because they contained useful
+information.  Because of the nature of the dataset, it was difficult to remove 
+any outliers that varied significantly from the rest of the population.  For 
+example, Ken Lay and Joseph Hirko had the largest exercised stock options, but 
+they were both persons of interest.  In addition, the dataset only consisted of 
+less than 150 people and there was a lot of missing data, as shown in the 
+following chart.  With such a small number of observations, excluding any 
+outliers would have had a significant impact on the model.
+
+
+```{r Missing_Values_Heatmap}
 enron.missing <- as.data.frame(sapply(enron.new_features, is.na))
 
 enron.long <- enron.new_features %>%
@@ -78,19 +105,22 @@ enron.long <- enron.new_features %>%
          -name,
          na.rm = F)
 
-ggplot(data = enron.long,
+enron.long.missing <- enron.long %>%
+  mutate(value = !is.na(value))
+
+ggplot(data = enron.long.missing,
        aes(x = name,
            y = var_name)) +
-  geom_tile(aes(fill = !is.na(value))) +
-  scale_color_manual(values = c('red', 'blue'),
-                     breaks = c('FALSE', 'TRUE'),
-                     labels = c('Missing', 'Present')) +
+  geom_tile(aes(fill = value)) +
+  scale_fill_manual(values = c('tomato2', 'springgreen3'),
+                    labels = c('Missing', 'Present')) +
+  #scale_fill_brewer(palette = "RdYlGn") +
   theme(axis.text.x = element_blank(),
         axis.ticks.x = element_blank()) +
   ggtitle("Heatmap of Missing Values") +
   xlab("Observations") +
   ylab("Variable Name") +
-  labs(fill = "Data Available")
+  labs(fill = "Data Availability")
 ```
 
 
@@ -116,14 +146,43 @@ restricted_stock_deferred | Stock that was not fully transferrable until certain
 exercised_stock_options | Amount of Enron stock an employee bought or sold
 expenses |  Costs occurred by an employee while conducting business
 
-I used Exploratory Data Analysis to identify / engineer the above features to 
+I used Exploratory Data Analysis to identify / engineer the above 6 features to 
 help create clear boundaries for my classifier. I created two of the features: 
 the fraction of emails sent to POIs and the fraction of emails from POIs.  I 
 did this because it did not make sense to use the raw number of emails to or 
 from a POI.  The total number of sent and received emails ranged from around 10 
 to over 10,000.  To better compare human interactions, it made more sense to 
-code this data as a proportion. The plots below helped me understand the 
-underlying nature of the financial and email variables:
+code this data as a proportion.  When I created the scatterplot of the two 
+features (first plot below), they created clear boundaries that helped improve 
+my decision tree classifier.  The fraction of emails sent to a POI (x-axis)
+below .16 and above .68 uniformly contained non-POI's. The same was true for the
+fraction of emails from a POI (y-axis) below .02 and above .14. The original 
+variables yielded the following evaluation metrics:
+
+<img src = 'screenshots/Screen Shot 2017-07-03 at 12.21.23 PM.png'>
+
+When I included just the above 6 variables, the numbers increased:
+
+<img src = 'screenshots/Screen Shot 2017-07-03 at 12.21.56 PM.png'>
+
+The plots below helped me understand the underlying nature of the financial and
+email variables:
+
+
+```{r}
+ggplot(data = enron.new_features,
+       aes(x = fract_to_poi,
+           y = fract_from_poi,
+           color = poi)) +
+  geom_point() +
+  scale_x_continuous(breaks = seq(0, 1.00, .04)) +
+  scale_y_continuous(breaks = seq(0, .23, .01)) +
+  ggtitle('Fraction of Emails From POI vs Fraction of Emails to POI') +
+  xlab('Fraction Sent to POI') +
+  ylab('Fraction From POI') +
+  labs(color = 'POI')
+```
+
 
 ```{r Financial_long_form}
 financial_long <- enron %>%
@@ -230,10 +289,11 @@ around 30,000,000.  With such a large range, PCA would not be able to properly
 determine which variable accounted for most of the variance in the data. I 
 created my own MinMaxScaler and applied it right after creating new features.
 It ensured that all variables ranged from 0 to 1.  PCA was a necessary feature
-selection step because it allowed the data to speak for itself in a way.  It
-identified the variables that contributed the most to the classifier. The
-explained variance ratios from PCA and and features importances from
-DecisionTree were: 
+selection step because it allowed the data to speak for itself in a way. I also
+used GridSearchCV to tune the parameters of PCA itself.  The algorithm tested
+a range of 2 to 6 components to determine the ideal number to use. It identified
+that 6 was the ideal number. The explained variance ratios from PCA and 
+features importances from DecisionTree were: 
 
 **Explained Variance Ratios:**
 [ 0.3574516,   0.23236625,  0.20634216,  0.11222562,  0.08776709]
@@ -246,16 +306,22 @@ DecisionTree were:
 > 3. What algorithm did you end up using? What other one(s) did you try? How did 
 model performance differ between algorithms?  [relevant rubric item: “pick an algorithm”]
 
-I used a DecisionTreeClassifier to categorize the observations. I started with
-a GaussianNaiveBayes to get a benchmark, then tried a few other algorithms
-before settling on the Decision Tree.  I tested out the KNearest Neighbors
-Classifier, but it had the worst results overall at only .22 for its precision, 
-recall and F1 scores.  I then tried a Support Vector Machines model but it was 
-slower than the others and didn't improve the F1 scores much.  I also tried out 
-an ensemble method (AdaBoost) but it was both slower and did not improve 
-evaluation scores much. At that point, I decided to try the DecisionTree 
-Classifier and added PCA to transform the variables.  This performed the best
-overall in terms of both evaluation metrics and speed.
+I tested out several algorithms before settling on a decision tree. I started 
+with a GaussianNaiveBayes to get a benchmark, then tried out Support Vector
+Machines, KNearest Neighbors, AdaBoost and finally DecisionTree. The KNearest 
+Neighbors Classifier had the worst results overall at only .22 for precision, 
+recall and F1 scores.  The Support Vector Machines model but was slower than the
+others and didn't improve the F1 scores much.  AdaBoost had similar results. At
+that point, I decided to try the DecisionTree Classifier and added PCA to 
+transform the variables.  This performed the best overall in terms of both 
+evaluation metrics and speed.  The original survey results without applying PCA
+are summarized below.  I used the following features in each model:
+
+Classifier | Results
+----- | -----
+DecisionTree | <img src = 'screenshots/Screen Shot 2017-07-03 at 12.21.56 PM.png'>
+Naive Bayes | <img src = 'screenshots/Screen Shot 2017-06-21 at 5.48.50 PM.png'>
+
 
 
 > 4. What does it mean to tune the parameters of an algorithm, and what can 

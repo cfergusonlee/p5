@@ -66,9 +66,19 @@ def manual_MinMaxScaler(df):
 ### Task 1: Select what features you'll use.
 ### features_list is a list of strings, each of which is a feature name.
 ### The first feature must be "poi".
+
 features_list = ['poi', 'fract_from_poi', 'fract_to_poi',  
                 'director_fees', 'restricted_stock_deferred', 
                 'exercised_stock_options', 'expenses']
+'''
+features_list = ['poi', 'bonus', 'deferral_payments', 'deferred_income', 
+                'director_fees', 'exercised_stock_options', 'expenses', 
+                'from_messages', 'from_poi_to_this_person', 
+                'from_this_person_to_poi', 'long_term_incentive', 'other',
+                'restricted_stock', 'restricted_stock_deferred', 
+                'salary_over_bonus', 'shared_receipt_with_poi', 'to_messages', 
+                'total_payments', 'total_stock_value']
+'''
 
 ### Load the dictionary containing the dataset
 with open("final_project_dataset.pkl", "r") as data_file:
@@ -77,6 +87,7 @@ with open("final_project_dataset.pkl", "r") as data_file:
 ### Task 2: Remove outliers
 data_dict.pop('TOTAL')
 data_dict.pop('THE TRAVEL AGENCY IN THE PARK')
+data_dict.pop('LOCKHART EUGENE E')
 
 ### Task 3: Create new feature(s)
 new_data_dict = create_features(data_dict)
@@ -115,10 +126,10 @@ pipe = Pipeline(steps)
 
 cv = StratifiedShuffleSplit(100, random_state = 42)
 params = {
-        "PCA__n_components": range(2, 6)
+        "PCA__n_components": range(2, 7)
 }
 
-gs = GridSearchCV(pipe, params, scoring = 'f1_weighted')
+gs = GridSearchCV(pipe, params, cv = cv, scoring = 'f1_weighted')
 
 
 ### Task 5: Tune your classifier to achieve better than .3 precision and recall 
