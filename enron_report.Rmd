@@ -48,11 +48,11 @@ on the dataset and how it can be used to answer the project question. Were there
 any outliers in the data when you got it, and how did you handle those?  
 [relevant rubric items: “data exploration”, “outlier investigation”]
 
-The goal for this project was to identify persons of interest (POIs) from a 
+The goal for this project was to identify persons of interest (POI's) from a 
 dataset of enron employees.  The dataset initially contained 146 observations 
 across 21 features and a POI status label.  There were 18 POI's and 128 
 non-POI's.  I used a supervised machine learning algorithm to identify patterns 
-in the email and financial data that separated POIs from non-POIs. The financial
+in the email and financial data that separated POI's from non-POI's. The financial
 and email variables included:
 
 Financial Variables | Email Variables
@@ -73,27 +73,15 @@ salary |
 salary_over_bonus | 
 total_payments | 
 total_stock_value | 
-
-```{r}
-subset(enron, is.na(total_payments)
-       & is.na(total_stock_value)
-       & is.na(email_address))
-```
-
   
 
 Three outliers in the dataset needed to be removed: “TOTAL”, “THE TRAVEL AGENCY 
 IN THE PARK”, and "LOCKHART EUGENE E".  The first two weren't actual people, 
 so they did not contribute to the model.  Eugene Lockhart was missing data for
-all of his features, so he was removed as well.  There were several financial 
-and email outliers, but I ultimately included them because they contained useful
-information.  Because of the nature of the dataset, it was difficult to remove 
-any outliers that varied significantly from the rest of the population.  For 
-example, Ken Lay and Joseph Hirko had the largest exercised stock options, but 
-they were both persons of interest.  In addition, the dataset only consisted of 
-less than 150 people and there was a lot of missing data, as shown in the 
-following chart.  With such a small number of observations, excluding any 
-outliers would have had a significant impact on the model.
+all of his features, so he was removed as well.  Because of the nature of the
+dataset, it was difficult to remove any outliers that varied significantly from 
+the rest of the population. The dataset consisted of less than 150 people and 
+there was a lot of missing data, as shown in the following chart:
 
 
 ```{r Missing_Values_Heatmap}
@@ -123,6 +111,11 @@ ggplot(data = enron.long.missing,
   labs(fill = "Data Availability")
 ```
 
+There were several financial and email outliers, but I ultimately included them
+because they contained useful information. People like Ken Lay and Joseph Hirko 
+had the largest exercised stock options (by several orders of magnitude), but 
+they were both persons of interest. With such a small number of observations,
+excluding any outliers would have had a significant impact on the model.
 
 
 > 2. What features did you end up using in your POI identifier, and what 
@@ -138,7 +131,10 @@ reasons for your choice of parameter values.  [relevant rubric items: “create
 new features”, “intelligently select features”, “properly scale features”]
 
 Variable | Definition
--------------- | ------------------------------------------------
+----------------- | -------------------------------------------------
+salary | Guaranteed annual salary for each employee
+bonus | Additional compensation tied to an employee's performance review
+total_stock_value | Total value of Enron stock an employee received as compensation
 fract_from_poi | Fraction of total emails received from a poi
 fract_to_poi | Fraction of total emails sent to a poi
 director_fees | Compensation for attendance at board meetings
@@ -146,27 +142,35 @@ restricted_stock_deferred | Stock that was not fully transferrable until certain
 exercised_stock_options | Amount of Enron stock an employee bought or sold
 expenses |  Costs occurred by an employee while conducting business
 
-I used Exploratory Data Analysis to identify / engineer the above 6 features to 
+I used Exploratory Data Analysis to identify / engineer the above 9 features to 
 help create clear boundaries for my classifier. I created two of the features: 
-the fraction of emails sent to POIs and the fraction of emails from POIs.  I 
+the fraction of emails sent to POI's and the fraction of emails from POI's.  I 
 did this because it did not make sense to use the raw number of emails to or 
 from a POI.  The total number of sent and received emails ranged from around 10 
 to over 10,000.  To better compare human interactions, it made more sense to 
 code this data as a proportion.  When I created the scatterplot of the two 
-features (first plot below), they created clear boundaries that helped improve 
-my decision tree classifier.  The fraction of emails sent to a POI (x-axis)
-below .16 and above .68 uniformly contained non-POI's. The same was true for the
-fraction of emails from a POI (y-axis) below .02 and above .14. The original 
-variables yielded the following evaluation metrics:
+features (second plot below), they created clear boundaries that helped improve 
+my classifier.The fraction of emails sent to a POI (x-axis) below 16% and above 
+68% uniformly contained non-POI's. The same was true for the fraction of emails 
+from a POI (y-axis) below 2% and above 14%.  These clear boundaries helped my
+classifier distinguish between POI's and non-POI's.
+
+I also used SelectKBest to help determine which features contributed the most
+variance in the data.  I plotted a negative log of the p-values below.  This
+helped highlight a few features I initially overlooked when completing my 
+analysis. In particular, the bonus and total_stock_value features jumped out at
+me as important variables to consider. The following plot shows each feature's 
+relative impact. Below that are the evaluation metrics when I used all 21 
+original variables vs just the above 9:
+
+<img src = 'screenshots/Screen Shot 2017-07-10 at 1.36.08 PM.png'>
 
 <img src = 'screenshots/Screen Shot 2017-07-03 at 12.21.23 PM.png'>
 
-When I included just the above 6 variables, the numbers increased:
+<img src = 'screenshots/Screen Shot 2017-07-09 at 1.22.39 AM.png'>
 
-<img src = 'screenshots/Screen Shot 2017-07-03 at 12.21.56 PM.png'>
-
-The plots below helped me understand the underlying nature of the financial and
-email variables:
+The plots below helped me further understand the underlying nature of the 
+financial and email variables:
 
 
 ```{r}
@@ -175,7 +179,7 @@ ggplot(data = enron.new_features,
            y = fract_from_poi,
            color = poi)) +
   geom_point() +
-  scale_x_continuous(breaks = seq(0, 1.00, .04)) +
+  scale_x_continuous(breaks = seq(0, 1.00, .1)) +
   scale_y_continuous(breaks = seq(0, .23, .01)) +
   ggtitle('Fraction of Emails From POI vs Fraction of Emails to POI') +
   xlab('Fraction Sent to POI') +
@@ -261,6 +265,7 @@ ggplot(data = subset(email_long, !is.na(amount)),
                            100,
                            1000,
                            10000)) +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
   ggtitle('Distribution of Emails') +
   xlab('Email Feature') +
   ylab('Number of Messages') +
@@ -269,79 +274,87 @@ ggplot(data = subset(email_long, !is.na(amount)),
 ```
 
 
-```{r Email_Scatter}
-ggplot(data = enron.new_features,
-       aes(x = fract_to_poi,
-           y = fract_from_poi,
-           color = poi)) +
-  geom_point() +
-  ggtitle('Fraction of Emails From POI vs Fraction of Emails to POI') +
-  xlab('Fraction Sent to POI') +
-  ylab('Fraction From POI') +
-  labs(color = 'POI')
-```
-
-After identifying useful features, I scaled them before using PCA in my model. I
+After identifying useful features, I scaled them before trying PCA in my model. I
 scaled the features because the ranges of the variables were too large and would
 throw off predictions.  For instance, the range for fractional email variables 
 ranged from 0.0 to 1.0 while exercised stock options varied from 1,000 to 
 around 30,000,000.  With such a large range, PCA would not be able to properly
 determine which variable accounted for most of the variance in the data. I 
 created my own MinMaxScaler and applied it right after creating new features.
-It ensured that all variables ranged from 0 to 1.  PCA was a necessary feature
-selection step because it allowed the data to speak for itself in a way. I also
-used GridSearchCV to tune the parameters of PCA itself.  The algorithm tested
-a range of 2 to 6 components to determine the ideal number to use. It identified
-that 6 was the ideal number. The explained variance ratios from PCA and 
-features importances from DecisionTree were: 
+It ensured that all variables ranged from 0 to 1.  PCA allowed the data to speak
+for itself in a way. I also used GridSearchCV to tune the parameters of PCA 
+itself.  After testing out a range of 2 to 11 components for PCA I realized that
+I had better evaluation metrics without the transformation, so I excluded it. 
+None-the-less, the explained variance ratios from PCA were: 
 
 **Explained Variance Ratios:**
 [ 0.3574516,   0.23236625,  0.20634216,  0.11222562,  0.08776709]
-
-  
-**Feature Importances:**
-[ 0.,          0.,          0.15539112,  0.57452213,  0.27008675]
 
 
 > 3. What algorithm did you end up using? What other one(s) did you try? How did 
 model performance differ between algorithms?  [relevant rubric item: “pick an algorithm”]
 
-I tested out several algorithms before settling on a decision tree. I started 
-with a GaussianNaiveBayes to get a benchmark, then tried out Support Vector
-Machines, KNearest Neighbors, AdaBoost and finally DecisionTree. The KNearest 
-Neighbors Classifier had the worst results overall at only .22 for precision, 
-recall and F1 scores.  The Support Vector Machines model but was slower than the
-others and didn't improve the F1 scores much.  AdaBoost had similar results. At
-that point, I decided to try the DecisionTree Classifier and added PCA to 
-transform the variables.  This performed the best overall in terms of both 
-evaluation metrics and speed.  The original survey results without applying PCA
-are summarized below.  I used the following features in each model:
+I tested out several algorithms before settling on a support vector machine. I
+started with a GaussianNaiveBayes to get a benchmark, then tried out a Decision 
+Tree, KNearest Neighbors, AdaBoost and finally Support Vector Machines. The 
+KNearest Neighbors Classifier had the worst results overall at only .22 for 
+precision, recall and F1 scores.  AdaBoost was slower than the other classifiers 
+and did only marginally better than KNearest Neighbors. The Decision Tree 
+Classifier initially had the best overall precision, recall and F1 scores
+but as we see further below, there was another classifier that performed slightly
+better.
+
+Support Vector Machines had the best overall scores once I tuned the
+class_weight parameter to "balanced".  This was important because the dataset
+was very imbalanced.  There were only 18 POI's and 128 non-POI's (125 once
+outliers were removed).  Before tuning the class_weight parameter, the algorithm
+penalized mistakes to both classes equally.  Adjusting the class_weight parameter
+remedied this. The original survey results are summarized below.  I used the
+following features in each model:
+
+- salary
+- fract_to_poi
+- fract_from_poi
+- director_fees
+- restricted_stock_deferred
+- exercised_stock_options
+- expenses
+- total_stock_value
 
 Classifier | Results
 ----- | -----
-DecisionTree | <img src = 'screenshots/Screen Shot 2017-07-03 at 12.21.56 PM.png'>
+DecisionTree | <img src= 'screenshots/Screen Shot 2017-06-21 at 5.50.06 PM.png'>
 Naive Bayes | <img src = 'screenshots/Screen Shot 2017-06-21 at 5.48.50 PM.png'>
-
+KNearest Neighbors | <img src = 'screenshots/Screen Shot 2017-06-21 at 5.57.06 PM.png'>
+SupportVectorMachines | <img src = 'screenshots/Screen Shot 2017-07-09 at 2.13.13 AM.png'>
 
 
 > 4. What does it mean to tune the parameters of an algorithm, and what can 
-happenif you don’t do this well?  How did you tune the parameters of your 
-particularalgorithm? What parameters did you tune? (Some algorithms do not have
+happen if you don’t do this well?  How did you tune the parameters of your 
+particular algorithm? What parameters did you tune? (Some algorithms do not have
 parameters that you need to tune -- if this is the case for the one you picked,
 identify and briefly explain how you would have done it for the model that was 
 not your final choice or a different model that does utilize parameter tuning, 
 e.g. a decision tree classifier).  [relevant rubric items: “discuss parameter 
 tuning”, “tune the algorithm”]
 
-Tuning the parameters of an algorithm involves reading the sklearn documentation
-and trying out different combinations of input arguments.  For instance, when I
-settled on a DecisionTree Classifier, I played around with the max_depth,
-minimal_samples_split, and criterion.  We calculated entropy for various
-scenarios in the lessons so I tried using that as an alternative criterion, but
-the results didn't change much from baseline.  I found the greatest variation in
-F1 scores when I changed the PCA parameters.  When I did not specify a 
-random_state, the scores kept bouncing all over the place.  I discovered that
-this was an important step to ensure that others could reproduce my results.
+Tuning the parameters of an algorithm involves testing out different 
+combinations of input arguments. This applies to both pre-processing steps like 
+PCA and the algorithm chosen.  I used GridSearchCV to accomplish this.  It 
+allowed me to try several different parameters at once and it automatically 
+chose the best combination for me.  I tried a range of 2-11 PCA components and 
+found that PCA didn't help my model much. When testing the DecisionTree 
+classifier, I was able to experiment with different max_depths,
+min_samples_splits and criteria.  We calculated entropy for various scenarios in
+the lessons so I tried using that as an alternative criterion, but the results 
+didn't change much from baseline.
+
+In the end I stuck with the baseline parameters for SVC. I tested different
+C-values, gammas and class weights.  Again, they didn't perform better than 
+baseline.  I set the random_state to 42 because the answer is always 42 :). When
+I did not specify a random_state, the scores kept bouncing all over the place. 
+I realized this was an important step to ensure that others could reproduce my 
+results.
 
 > 5. What is validation, and what’s a classic mistake you can make if you do it 
 wrong? How did you validate your analysis?  [relevant rubric items: “discuss
@@ -354,16 +367,33 @@ training data but poorly on new testing data.  This can happen if you don't
 partition a large enough chunk for your testing set or when you use an
 overly-convoluted boundary when training.
 
+I validated my analysis with cross validation using StratifiedShuffleSplit. I
+split the data into 10 folds, trained it on each of the 10 folds, then computed
+the accuracy scores for each.  This kept the proportion of POI's and non-POI's
+as close as possible to the proportion seen in the full dataset. The average
+overall accuracy score using this method was 81.2%.
+
 > 6. Give at least 2 evaluation metrics and your average performance for each of 
 them.  Explain an interpretation of your metrics that says something human-
 understandable about your algorithm’s performance. [relevant rubric item: 
 “usage of evaluation metrics”]
 
-My average precision score was around .34 and my average recall was around .38-
-.39.  Precision compares the number of false negatives to true positives in the
-results.  In other words, it asks, "Out of all of the items that are truly
-positive, how many were correctly labeled as positive?"  Recall measures the 
-number of false positives to true positives.  It asks, "Out of all of the items
-labeled as positive, how many truly belong to the positive class?"  My results
-indicate that my algorith was better at lowering the number of false positives
-than it was at weeding out false negatives.
+My final precision and recall scores were 35% and 78%, respectively.  Precision 
+is a ratio of true positives to the total number of true positives and false 
+positives. In other words, it asks, "Out of all of the items that are truly
+positive, how many were correctly labeled as positive?" Recall is a ratio of
+true positives to the total number of true positives and false negatives. It 
+asks, "Out of all of the items labeled as positive, how many truly belong to the
+positive class?" Below are the equations for precision and recall as well as the
+evaluation metrics from tester.py:
+
+<img src='https://help.kcura.com/9.4/Content/Resources/Images/Recipes/How_to_Calculate_Precision_and_Recall_without_a_Control_Set/SCR_PrecisionEquation.png'>
+
+<img src='https://help.kcura.com/9.4/Content/Resources/Images/Recipes/How_to_Calculate_Precision_and_Recall_without_a_Control_Set/SCR_RecallEquation_821x99.png'>
+
+<img src ='screenshots/Screen Shot 2017-07-10 at 1.08.39 PM.png'>
+
+In context, my algorithm had more false positives than false negatives.  A
+false positive was a situation where a POI was labeled as a Non-POI and a false
+negative was a situation where a Non-POI was labeled as a POI.  This led to
+high recall scores and low precision scores.

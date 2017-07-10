@@ -3,7 +3,6 @@
 import sys
 import pickle
 import numpy as np
-import matplotlib.pyplot as plt
 #sys.path.append("../tools/")
 
 from feature_format import featureFormat, targetFeatureSplit
@@ -68,19 +67,9 @@ def manual_MinMaxScaler(df):
 ### features_list is a list of strings, each of which is a feature name.
 ### The first feature must be "poi".
 
-'''
-features_list = ['poi', 'salary', 'fract_from_poi', 'fract_to_poi', 
+features_list = ['poi', 'salary', 'bonus', 'fract_to_poi', 'fract_from_poi',
                 'director_fees', 'restricted_stock_deferred', 
                 'exercised_stock_options', 'expenses', 'total_stock_value']
-'''
-
-features_list = ['poi', 'salary', 'bonus', 'deferral_payments', 'deferred_income', 'director_fees', 
-                 'exer_stock_opts_over_tot', 'exercised_stock_options', 'expenses', 
-                 'fract_from_poi', 'fract_to_poi', 'from_messages', 
-                 'from_poi_to_this_person', 'from_this_person_to_poi', 
-                 'long_term_incentive', 'other', 'restricted_stock', 
-                 'restricted_stock_deferred', 'salary_over_bonus', 'shared_receipt_with_poi', 
-                 'to_messages', 'total_payments', 'total_stock_value']
 
 ### Load the dictionary containing the dataset
 with open("final_project_dataset.pkl", "r") as data_file:
@@ -114,9 +103,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.decomposition import PCA
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
-from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit
-from sklearn.metrics import classification_report
-from sklearn.feature_selection import SelectKBest
+from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit, KFold
+from sklearn.metrics import classification_report, accuracy_score,confusion_matrix
 from time import time
 
 
@@ -131,57 +119,70 @@ from time import time
 ### stratified shuffle split cross validation. For more info: 
 ### http://scikit-learn.org/stable/modules/generated/sklearn.cross_validation.StratifiedShuffleSplit.html
 
-# Example starting point. Try investigating other evaluation techniques!
-from sklearn.model_selection import train_test_split
-features_train, features_test, labels_train, labels_test = \
-    train_test_split(features, labels, test_size=0.3, random_state=42)
 
 # Classifiers
-clf_DT = DecisionTreeClassifier(random_state=42)
-clf_SVC = SVC()
+class_weights = {
+                0.0: 18.0/143, 
+                1.0: 125.0/143}
+clf_SVC = SVC(
+            class_weight = 'balanced',
+            random_state = 42)
 
 # PCA
 pca = PCA(random_state = 42)
 
-# SelectKBest
-skb = SelectKBest()
-
-#Pipeline
-steps = [('skb', skb),
-         ('clf', clf_SVC)]
+# Pipeline
+steps = [
+        ('clf', clf_SVC)]
 pipe = Pipeline(steps)
 
 # GridSearchCV
-params = {"skb__k": range(2, 21),
-         "clf__class_weight": ["balanced"]}
 cv = StratifiedShuffleSplit(100, random_state = 42)
-gs = GridSearchCV(pipe,
-                  param_grid = params,
-                  cv = cv,
-                  scoring = 'f1_weighted')
+params = {
+        'clf__kernel': ['poly', 'rbf'],
+        'clf__degree': [2, 3, 4]}
+gs = GridSearchCV(
+    pipe,
+    params,
+    scoring = 'f1_weighted')
 
-# Train Classifier
-print "Training the classifier"
+'''
+from sklearn.model_selection import train_test_split
+features_train, features_test, labels_train, labels_test = \
+    train_test_split(features, labels, test_size=0.3, random_state=42)
+'''
+np_features = np.array(features)
+np_labels = np.array(labels)
+
 t0 = time()
-gs.fit(features_train, labels_train)
-print "Training time: %0.3fs" % (time() - t0)
+sss = StratifiedShuffleSplit(n_splits = 10, test_size = .5, random_state = 42)
+sss.get_n_splits(np_features, np_labels)
+accuracy_scores = []
+print "Training the classifier"
 
-# Get the raw p-values for each feature, and transform from p-values into scores
-scores = -np.log10(gs.best_estimator_.named_steps['skb'].pvalues_)
+for train_index, test_index in sss.split(np_features, np_labels):
+    features_train, features_test = np_features[train_index], np_features[test_index]
+    labels_train, labels_test = np_labels[train_index], np_labels[test_index]
 
-# Plot the scores.  See how "Pclass", "Sex", "Title", and "Fare" are the best?
-plt.bar(range(len(features_list[1:])), scores)
-plt.xticks(range(len(features_list[1:])), features_list[1:], rotation='vertical')
-plt.show()
+    # Train Classifier
+    gs.fit(features_train, labels_train)
+    clf = gs.best_estimator_
+    print "Training time: %0.3fs" % (time() - t0)
+    # Extract best classifier
+    pred = clf.predict(features_test)
+    print clf
+    print classification_report(labels_test, pred)
+    accuracy_scores.append(accuracy_score(pred, labels_test))
 
-# Extract best classifier
-clf = gs.best_estimator_
-pred = clf.predict(features_test)
-print clf
 
+print "Overall accuracy:", np.mean(accuracy_scores)
+
+print "Confusion Matrix:"
+print "POI vs Non-POI"
+print confusion_matrix(labels_test, pred, labels=[1, 0])
 #print "Explained variance ratio:", gs.best_estimator_.named_steps['PCA'].explained_variance_ratio_
 
-print classification_report(labels_test, pred)
+
 
 ### Task 6: Dump your classifier, dataset, and features_list so anyone can
 ### check your results. You do not need to change anything below, but make sure
