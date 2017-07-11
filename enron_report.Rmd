@@ -138,39 +138,22 @@ total_stock_value | Total value of Enron stock an employee received as compensat
 fract_from_poi | Fraction of total emails received from a poi
 fract_to_poi | Fraction of total emails sent to a poi
 director_fees | Compensation for attendance at board meetings
-restricted_stock_deferred | Stock that was not fully transferrable until certain contitions were met
+restricted_stock_deferred | Stock that was not fully transferrable until certain conditions were met
 exercised_stock_options | Amount of Enron stock an employee bought or sold
 expenses |  Costs occurred by an employee while conducting business
 
 I used Exploratory Data Analysis to identify / engineer the above 9 features to 
-help create clear boundaries for my classifier. I created two of the features: 
+help create clearer boundaries for my classifier. I created two of the features: 
 the fraction of emails sent to POI's and the fraction of emails from POI's.  I 
 did this because it did not make sense to use the raw number of emails to or 
 from a POI.  The total number of sent and received emails ranged from around 10 
 to over 10,000.  To better compare human interactions, it made more sense to 
 code this data as a proportion.  When I created the scatterplot of the two 
-features (second plot below), they created clear boundaries that helped improve 
-my classifier.The fraction of emails sent to a POI (x-axis) below 16% and above 
+features (below), they created clear boundaries that helped improve my 
+classifier.The fraction of emails sent to a POI (x-axis) below 16% and above 
 68% uniformly contained non-POI's. The same was true for the fraction of emails 
 from a POI (y-axis) below 2% and above 14%.  These clear boundaries helped my
 classifier distinguish between POI's and non-POI's.
-
-I also used SelectKBest to help determine which features contributed the most
-variance in the data.  I plotted a negative log of the p-values below.  This
-helped highlight a few features I initially overlooked when completing my 
-analysis. In particular, the bonus and total_stock_value features jumped out at
-me as important variables to consider. The following plot shows each feature's 
-relative impact. Below that are the evaluation metrics when I used all 21 
-original variables vs just the above 9:
-
-<img src = 'screenshots/Screen Shot 2017-07-10 at 1.36.08 PM.png'>
-
-<img src = 'screenshots/Screen Shot 2017-07-03 at 12.21.23 PM.png'>
-
-<img src = 'screenshots/Screen Shot 2017-07-09 at 1.22.39 AM.png'>
-
-The plots below helped me further understand the underlying nature of the 
-financial and email variables:
 
 
 ```{r}
@@ -186,6 +169,40 @@ ggplot(data = enron.new_features,
   ylab('Fraction From POI') +
   labs(color = 'POI')
 ```
+
+
+I also used SelectKBest to help determine which features contributed the most
+variance in the data.  I plotted a negative log of the p-values below.  This
+helped highlight a few features I initially overlooked when completing my 
+analysis. In particular, the bonus and total_stock_value features jumped out at
+me as important variables to consider. The following plot shows each feature's 
+relative impact:
+
+<img src = 'screenshots/Screen Shot 2017-07-10 at 1.36.08 PM.png'>
+
+Below are the evaluation metrics for my final model with and without the
+fract_to_poi and fract_from_poi features.  The results show that after adding the
+engineered features to the model, precision increased from 27% to 35% and recall
+increased from 44% to 78%.  I also created the variables salary_over_bonus and
+exer_stock_opts_over_tot. When I tested them in my algorithm, their evaluation
+metrics were better than the original 7, but lower than fract_from_poi and 
+fract_to_poi alone, so I omitted them. The results of adding those variables to 
+my final algorithm (11 total features) are summarized below:
+
+**Omitting fract_from_poi and fract_to_poi**
+<img src = 'screenshots/Screen Shot 2017-07-11 at 1.18.19 AM.png'>
+
+**Including fract_from_poi and fract_to_poi**
+<img src = 'screenshots/Screen Shot 2017-07-11 at 1.19.07 AM.png'>
+
+**Including fract_from_poi, fract_to_poi, salary_over_bonus and exer_stock_opts_over_tot**
+<img src = 'screenshots/Screen Shot 2017-07-11 at 1.39.44 AM.png'>
+
+The plots below helped me further understand the underlying nature of the 
+financial and email variables.  The boxplot of financial variables helped me see
+that only Non-POI's had director_fees and restricted_stock_deferred variables 
+present. The emails boxplot made me think critically about how I could engineer 
+new fractional email features which I eventually included in my classifier:
 
 
 ```{r Financial_long_form}
@@ -339,13 +356,24 @@ e.g. a decision tree classifier).  [relevant rubric items: “discuss parameter
 tuning”, “tune the algorithm”]
 
 Tuning the parameters of an algorithm involves testing out different 
-combinations of input arguments. This applies to both pre-processing steps like 
-PCA and the algorithm chosen.  I used GridSearchCV to accomplish this.  It 
-allowed me to try several different parameters at once and it automatically 
-chose the best combination for me.  I tried a range of 2-11 PCA components and 
+combinations of input arguments.  These input arguments, known as hyperparamters
+are set before an algorithm is fit to data and affect the performance on an 
+independent data set. These hyperparameters affect the performance of a model,
+including but not limited to its complexity, learning capacity, and speed. This
+is one way to "custom fit" an algorithm to the training data it is modeling.
+Parameter tuning is a way to adjust an algorithm at a high level prior to 
+training. For instance, if you are using a DecisionTree Classifier and your
+model is underfitting to your data, you can adjust the min_samples_split
+hyperparameter to allow the model to make more granular splits and hence more
+closely fit the data.
+
+Parameter tuning applies to both pre-processing steps like PCA and the algorithm
+chosen.  I used GridSearchCV to accomplish this.  It allowed me to try several 
+different parameters in one shot as opposed to rerunning the algorithm every 
+time I wanted to make an adjustment.  I tried a range of 2-11 PCA components and 
 found that PCA didn't help my model much. When testing the DecisionTree 
-classifier, I was able to experiment with different max_depths,
-min_samples_splits and criteria.  We calculated entropy for various scenarios in
+classifier, I was able to experiment with different max_depths, split criteria
+and min_samples_splits.  We calculated entropy for various scenarios in
 the lessons so I tried using that as an alternative criterion, but the results 
 didn't change much from baseline.
 

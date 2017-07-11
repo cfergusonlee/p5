@@ -19,4 +19,8 @@ aS'expenses'
 p9
 aS'total_stock_value'
 p10
+aS'exer_stock_opts_over_tot'
+p11
+aS'salary_over_bonus'
+p12
 a.

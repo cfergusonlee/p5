@@ -342,6 +342,13 @@ names(enron)
 
 ```{r}
 ggplot(data = enron.new_features,
+       aes(x = long_term_incentive)) +
+  geom_histogram(aes(fill = poi))
+```
+
+
+```{r}
+ggplot(data = enron.new_features,
        aes(x = salary_over_bonus)) +
   geom_histogram(aes(fill = poi),
                  bins = 40) +
@@ -494,7 +501,7 @@ ggplot(data = enron.new_features,
 
 ```{r}
 ggplot(data = enron.new_features,
-       aes(x = (from_this_person_to_poi)/from_messages)) +
+       aes(x = (from_this_person_to_poi))) +
   geom_histogram(bins = 50,
                  aes(fill = poi)) +
   scale_x_log10() +
