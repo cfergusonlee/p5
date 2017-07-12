@@ -1,5 +1,5 @@
 ---
-title: "Enron Report"
+title: "Identifying Fraud from Enron Emails"
 author: "By: Courtney Ferguson Lee"
 date: "June 29, 2017"
 output: html_document
@@ -42,14 +42,10 @@ enron.new_features <- enron %>%
 
 
 
-> 1. Summarize for us the goal of this project and how machine learning is 
-useful in trying to accomplish it. As part of your answer, give some background 
-on the dataset and how it can be used to answer the project question. Were there
-any outliers in the data when you got it, and how did you handle those?  
-[relevant rubric items: “data exploration”, “outlier investigation”]
+## Introduction
 
 The goal for this project was to identify persons of interest (POI's) from a 
-dataset of enron employees.  The dataset initially contained 146 observations 
+dataset of Enron employees.  The dataset initially contained 146 observations 
 across 21 features and a POI status label.  There were 18 POI's and 128 
 non-POI's.  I used a supervised machine learning algorithm to identify patterns 
 in the email and financial data that separated POI's from non-POI's. The financial
@@ -118,17 +114,20 @@ they were both persons of interest. With such a small number of observations,
 excluding any outliers would have had a significant impact on the model.
 
 
-> 2. What features did you end up using in your POI identifier, and what 
-selection process did you use to pick them? Did you have to do any scaling? Why 
-or why not? As part of the assignment, you should attempt to engineer your own 
-feature that does not come ready-made in the dataset -- explain what feature you
-tried to make, and the rationale behind it. (You do not necessarily have to use
-it in the final analysis, only engineer and test it.) In your feature selection
-step, if you used an algorithm like a decision tree, please also give the feature 
-importances of the features that you use, and if you used an automated feature 
-selection function like SelectKBest, please report the feature scores and 
-reasons for your choice of parameter values.  [relevant rubric items: “create 
-new features”, “intelligently select features”, “properly scale features”]
+## Feature Engineering
+
+I used Exploratory Data Analysis to identify / engineer the 9 features below to 
+help create clearer boundaries for my classifier. I created two of the features: 
+the fraction of emails sent to POI's and the fraction of emails from POI's.  I 
+did this because it did not make sense to use the raw number of emails to or 
+from a POI.  The total number of sent and received emails ranged from around 10 
+to over 10,000.  To better compare human interactions, it made more sense to 
+code this data as a proportion.  When I created the scatterplot of the two 
+features (further below), they created clear boundaries that helped improve my 
+classifier.The fraction of emails sent to a POI (x-axis) below 16% and above 
+68% uniformly contained non-POI's. The same was true for the fraction of emails 
+from a POI (y-axis) below 2% and above 14%.  These clear boundaries helped my
+classifier distinguish between POI's and non-POI's.
 
 Variable | Definition
 ----------------- | -------------------------------------------------
@@ -141,19 +140,6 @@ director_fees | Compensation for attendance at board meetings
 restricted_stock_deferred | Stock that was not fully transferrable until certain conditions were met
 exercised_stock_options | Amount of Enron stock an employee bought or sold
 expenses |  Costs occurred by an employee while conducting business
-
-I used Exploratory Data Analysis to identify / engineer the above 9 features to 
-help create clearer boundaries for my classifier. I created two of the features: 
-the fraction of emails sent to POI's and the fraction of emails from POI's.  I 
-did this because it did not make sense to use the raw number of emails to or 
-from a POI.  The total number of sent and received emails ranged from around 10 
-to over 10,000.  To better compare human interactions, it made more sense to 
-code this data as a proportion.  When I created the scatterplot of the two 
-features (below), they created clear boundaries that helped improve my 
-classifier.The fraction of emails sent to a POI (x-axis) below 16% and above 
-68% uniformly contained non-POI's. The same was true for the fraction of emails 
-from a POI (y-axis) below 2% and above 14%.  These clear boundaries helped my
-classifier distinguish between POI's and non-POI's.
 
 
 ```{r}
@@ -302,16 +288,10 @@ It ensured that all variables ranged from 0 to 1.  PCA allowed the data to speak
 for itself in a way. I also used GridSearchCV to tune the parameters of PCA 
 itself.  After testing out a range of 2 to 11 components for PCA I realized that
 I had better evaluation metrics without the transformation, so I excluded it. 
-None-the-less, the explained variance ratios from PCA were: 
 
-**Explained Variance Ratios:**
-[ 0.3574516,   0.23236625,  0.20634216,  0.11222562,  0.08776709]
+## Algorithm Selection
 
-
-> 3. What algorithm did you end up using? What other one(s) did you try? How did 
-model performance differ between algorithms?  [relevant rubric item: “pick an algorithm”]
-
-I tested out several algorithms before settling on a support vector machine. I
+I tested out several algorithms before settling on a Support Vector Machine. I
 started with a GaussianNaiveBayes to get a benchmark, then tried out a Decision 
 Tree, KNearest Neighbors, AdaBoost and finally Support Vector Machines. The 
 KNearest Neighbors Classifier had the worst results overall at only .22 for 
@@ -346,14 +326,7 @@ KNearest Neighbors | <img src = 'screenshots/Screen Shot 2017-06-21 at 5.57.06 P
 SupportVectorMachines | <img src = 'screenshots/Screen Shot 2017-07-09 at 2.13.13 AM.png'>
 
 
-> 4. What does it mean to tune the parameters of an algorithm, and what can 
-happen if you don’t do this well?  How did you tune the parameters of your 
-particular algorithm? What parameters did you tune? (Some algorithms do not have
-parameters that you need to tune -- if this is the case for the one you picked,
-identify and briefly explain how you would have done it for the model that was 
-not your final choice or a different model that does utilize parameter tuning, 
-e.g. a decision tree classifier).  [relevant rubric items: “discuss parameter 
-tuning”, “tune the algorithm”]
+## Parameter Tuning
 
 Tuning the parameters of an algorithm involves testing out different 
 combinations of input arguments.  These input arguments, known as hyperparamters
@@ -384,11 +357,9 @@ I did not specify a random_state, the scores kept bouncing all over the place.
 I realized this was an important step to ensure that others could reproduce my 
 results.
 
-> 5. What is validation, and what’s a classic mistake you can make if you do it 
-wrong? How did you validate your analysis?  [relevant rubric items: “discuss
-validation”, “validation strategy”]
+## Model Validation
 
-Validation involves ensuring your model is effective on both training and
+Validation involves ensuring a model is effective on both training and
 testing data.  One pitfall in validation is when you accidentally overfit your
 model to the training data.  Overfitting is when your model performs well on
 training data but poorly on new testing data.  This can happen if you don't 
@@ -401,10 +372,7 @@ the accuracy scores for each.  This kept the proportion of POI's and non-POI's
 as close as possible to the proportion seen in the full dataset. The average
 overall accuracy score using this method was 81.2%.
 
-> 6. Give at least 2 evaluation metrics and your average performance for each of 
-them.  Explain an interpretation of your metrics that says something human-
-understandable about your algorithm’s performance. [relevant rubric item: 
-“usage of evaluation metrics”]
+## Conclusion
 
 My final precision and recall scores were 35% and 78%, respectively.  Precision 
 is a ratio of true positives to the total number of true positives and false 
@@ -415,13 +383,18 @@ asks, "Out of all of the items labeled as positive, how many truly belong to the
 positive class?" Below are the equations for precision and recall as well as the
 evaluation metrics from tester.py:
 
-<img src='https://help.kcura.com/9.4/Content/Resources/Images/Recipes/How_to_Calculate_Precision_and_Recall_without_a_Control_Set/SCR_PrecisionEquation.png'>
+<img src='https://help.kcura.com/9.4/Content/Resources/Images/Recipes/How_to_Calculate_Precision_and_Recall_without_a_Control_Set/SCR_PrecisionEquation.png' width=400>
 
-<img src='https://help.kcura.com/9.4/Content/Resources/Images/Recipes/How_to_Calculate_Precision_and_Recall_without_a_Control_Set/SCR_RecallEquation_821x99.png'>
+<img src='https://help.kcura.com/9.4/Content/Resources/Images/Recipes/How_to_Calculate_Precision_and_Recall_without_a_Control_Set/SCR_RecallEquation_821x99.png' width=400>
 
 <img src ='screenshots/Screen Shot 2017-07-10 at 1.08.39 PM.png'>
 
 In context, my algorithm had more false positives than false negatives.  A
 false positive was a situation where a POI was labeled as a Non-POI and a false
 negative was a situation where a Non-POI was labeled as a POI.  This led to
-high recall scores and low precision scores.
+high recall scores and low precision scores. I could have used accuracy as my
+primary metric, but that would have been misleading.There were only 18 POI's
+in the entire dataset. Because the dataset was so imbalanced, I could have 
+achieved 87.4% accuracy by simply labeling all observations as Non-POI's. That
+is why precision and recall were better metrics for evaluating my algorithm on
+this dataset.
