@@ -96,11 +96,12 @@ ggplot(data = enron.long.missing,
        aes(x = name,
            y = var_name)) +
   geom_tile(aes(fill = value)) +
-  scale_fill_manual(values = c('tomato2', 'springgreen3'),
+  scale_fill_manual(values = c('grey39', 'white'),
                     labels = c('Missing', 'Present')) +
   #scale_fill_brewer(palette = "RdYlGn") +
   theme(axis.text.x = element_blank(),
         axis.ticks.x = element_blank()) +
+  theme(legend.key = element_rect(colour = "black")) +
   ggtitle("Heatmap of Missing Values") +
   xlab("Observations") +
   ylab("Variable Name") +
