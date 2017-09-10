@@ -159,13 +159,13 @@ ggplot(data = enron.new_features,
 
 
 I also used SelectKBest to help determine which features contributed the most
-variance in the data.  I plotted a negative log of the p-values below.  This
+variance in the data.  I plotted the negative log of the p-values below.  This
 helped highlight a few features I initially overlooked when completing my 
 analysis. In particular, the bonus and total_stock_value features jumped out at
 me as important variables to consider. The following plot shows each feature's 
 relative impact:
 
-<img src = 'screenshots/Screen Shot 2017-07-10 at 1.36.08 PM.png'>
+<img src = 'screenshots/Screen Shot 2017-09-01 at 12.10.41 PM.png'>
 
 Below are the evaluation metrics for my final model with and without the
 fract_to_poi and fract_from_poi features.  The results show that after adding the
@@ -390,8 +390,10 @@ evaluation metrics from tester.py:
 
 <img src ='screenshots/Screen Shot 2017-07-10 at 1.08.39 PM.png'>
 
-In context, my algorithm had more false positives than false negatives.  A
-false positive was a situation where a POI was labeled as a Non-POI and a false
+In context, my algorithm had more false positives than false negatives.  True
+positives were situations where a POI was correctly identified as a POI and true
+negaitives were when a Non-POI was correctly identified as such. A false 
+positive was a situation where a POI was labeled as a Non-POI and a false
 negative was a situation where a Non-POI was labeled as a POI.  This led to
 high recall scores and low precision scores. I could have used accuracy as my
 primary metric, but that would have been misleading.There were only 18 POI's
