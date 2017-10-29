@@ -1,6 +1,6 @@
 ---
 title: "Identifying Fraud from Enron Emails"
-author: "By: Courtney Ferguson Lee"
+author: "[**Courtney Ferguson Lee**](https://www.linkedin.com/in/courtneyfergusonlee/)"
 date: "June 29, 2017"
 output: html_document
 ---
@@ -44,7 +44,7 @@ enron.new_features <- enron %>%
 
 ## Introduction
 
-The goal for this project was to identify persons of interest (POI's) from a 
+The goal of this project was to identify persons of interest (POI's) from a 
 dataset of Enron employees.  The dataset initially contained 146 observations 
 across 21 features and a POI status label.  There were 18 POI's and 128 
 non-POI's.  I used a supervised machine learning algorithm to identify patterns 
