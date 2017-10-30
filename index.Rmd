@@ -9,6 +9,12 @@ output: html_document
 body{ /* Normal  */
       font-size: 18px;
   }
+td {  /* Table  */
+  font-size: 16px;
+}
+th {
+  font-size: 16px;
+}
 </style>
 
 ```{r setup, include=FALSE}
@@ -40,7 +46,7 @@ enron.new_features <- enron %>%
          poi = as.factor(poi))
 ```
 
-
+<img src='https://cdn.empireonline.com/jpg/80/0/0/1000/563/0/north/0/0/0/0/0/t/films/13020/images/jkpTcreM7YOUF4RaDTgTAy9aMJZ.jpg'>
 
 ## Introduction
 
@@ -51,6 +57,8 @@ non-POI's.  I used a supervised machine learning algorithm to identify patterns
 in the email and financial data that separated POI's from non-POI's. The financial
 and email variables included:
 
+
+<center>
 Financial Variables | Email Variables
 ---|---
 bonus | email_address
@@ -69,7 +77,7 @@ salary |
 salary_over_bonus | 
 total_payments | 
 total_stock_value | 
-  
+</center>  
 
 Three outliers in the dataset needed to be removed: “TOTAL”, “THE TRAVEL AGENCY 
 IN THE PARK”, and "LOCKHART EUGENE E".  The first two weren't actual people, 
@@ -173,19 +181,17 @@ engineered features to the model, precision increased from 27% to 35% and recall
 increased from 44% to 78%.  I also created the variables salary_over_bonus and
 exer_stock_opts_over_tot. When I tested them in my algorithm, their evaluation
 metrics were better than the original 7, but lower than fract_from_poi and 
-fract_to_poi alone, so I omitted them. The results of adding those variables to 
-my final algorithm (11 total features) are summarized below:
+fract_to_poi alone, so I omitted them. The results of adding the engineered
+features to the model are summarized below:
 
-**Omitting fract_from_poi and fract_to_poi**
-<img src = 'screenshots/Screen Shot 2017-07-11 at 1.18.19 AM.png'>
+Fract_to_poi | Fract_from_poi | Salary_over_bonus | Exer_stock_opts_over_tot | Accuracy | Precision | Recall | F1 | F2
+--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---:
+<span style='color:red'>&#x2717;</span> | <span style='color:red'>&#x2717;</span> | <span style='color:red'>&#x2717;</span> | <span style='color:red'>&#x2717;</span> | 77% | 27% | 44% | 34% | 39%
+<span style='color:green'>&#x2713;</span> | <span style='color:green'>&#x2713;</span> | <span style='color:red'>&#x2717;</span> | <span style='color:red'>&#x2717;</span> | 78% | 34% | 78% | 48% | 63%
+<span style='color:green'>&#x2713;</span> | <span style='color:green'>&#x2713;</span> | <span style='color:green'>&#x2713;</span> | <span style='color:green'>&#x2713;</span> | 76% | 32% | 67% | 43% | 55%
 
-**Including fract_from_poi and fract_to_poi**
-<img src = 'screenshots/Screen Shot 2017-07-11 at 1.19.07 AM.png'>
 
-**Including fract_from_poi, fract_to_poi, salary_over_bonus and exer_stock_opts_over_tot**
-<img src = 'screenshots/Screen Shot 2017-07-11 at 1.39.44 AM.png'>
-
-The plots below helped me further understand the underlying nature of the 
+The following plots helped me further understand the underlying nature of the 
 financial and email variables.  The boxplot of financial variables helped me see
 that only Non-POI's had director_fees and restricted_stock_deferred variables 
 present. The emails boxplot made me think critically about how I could engineer 
@@ -319,12 +325,12 @@ following features in each model:
 - expenses
 - total_stock_value
 
-Classifier | Results
------ | -----
-DecisionTree | <img src= 'screenshots/Screen Shot 2017-06-21 at 5.50.06 PM.png'>
-Naive Bayes | <img src = 'screenshots/Screen Shot 2017-06-21 at 5.48.50 PM.png'>
-KNearest Neighbors | <img src = 'screenshots/Screen Shot 2017-06-21 at 5.57.06 PM.png'>
-SupportVectorMachines | <img src = 'screenshots/Screen Shot 2017-07-09 at 2.13.13 AM.png'>
+Classifier | Accuracy | Precision | Recall | F1 | F2
+----- | :-----: | :-----: | :-----: | :-----: | :-----:
+DecisionTree | 83% | 35% | 36% | 35% | 36%
+Naive Bayes | 33% | 17% | 100% | 29% | 50%
+KNearest Neighbors | 79% | 22% | 23% | 23% | 23%
+SupportVectorMachines | 76% | 33% | 73% | 46% | 59%
 
 
 ## Parameter Tuning
@@ -388,7 +394,9 @@ evaluation metrics from tester.py:
 
 <img src='https://help.kcura.com/9.4/Content/Resources/Images/Recipes/How_to_Calculate_Precision_and_Recall_without_a_Control_Set/SCR_RecallEquation_821x99.png' width=400>
 
-<img src ='screenshots/Screen Shot 2017-07-10 at 1.08.39 PM.png'>
+Classifier | Accuracy | Precision | Recall | F1 | F2
+--- | :---: | :---: | :---: | :---: | :---: |
+Support Vector Machines | 78% | 35% | 78% | 48% | 63%
 
 In context, my algorithm had more false positives than false negatives.  True
 positives were situations where a POI was correctly identified as a POI and true
