@@ -125,15 +125,15 @@ excluding any outliers would have had a significant impact on the model.
 
 ## Feature Engineering
 
-I used Exploratory Data Analysis to identify / engineer the 9 features below to 
-help create clearer boundaries for my classifier. I created two of the features: 
-the fraction of emails sent to POI's and the fraction of emails from POI's.  I 
-did this because it did not make sense to use the raw number of emails to or 
-from a POI.  The total number of sent and received emails ranged from around 10 
+I used Exploratory Data Analysis to identify the variables below as the most
+important features in the dataset. I engineered two of the features (the fraction 
+of emails sent to POI's and the fraction of emails from POI's) because 
+it did not make sense to use the raw number of emails to or from a POI.  The 
+total number of emails sent from or received by each employee ranged from 10 
 to over 10,000.  To better compare human interactions, it made more sense to 
-code this data as a proportion.  When I created the scatterplot of the two 
+code this data as a proportion.  When I graphed a scatterplot of the two 
 features (further below), they created clear boundaries that helped improve my 
-classifier.The fraction of emails sent to a POI (x-axis) below 16% and above 
+classifier. The fraction of emails sent to a POI (x-axis) below 16% and above 
 68% uniformly contained non-POI's. The same was true for the fraction of emails 
 from a POI (y-axis) below 2% and above 14%.  These clear boundaries helped my
 classifier distinguish between POI's and non-POI's.
@@ -167,7 +167,7 @@ ggplot(data = enron.new_features,
 
 
 I also used SelectKBest to help determine which features contributed the most
-variance in the data.  I plotted the negative log of the p-values below.  This
+variance in the data.  The negative log of the p-values are plotted below.  This
 helped highlight a few features I initially overlooked when completing my 
 analysis. In particular, the bonus and total_stock_value features jumped out at
 me as important variables to consider. The following plot shows each feature's 
